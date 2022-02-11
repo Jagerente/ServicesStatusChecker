@@ -52,13 +52,13 @@ namespace ServicesStatusChecker.Modules
             {
                 var status = site.Status;
 
-                if (site.Alive != null && site.Alive.Value && !Constants.Critical) continue;
+                if ((site.Alive == null || site.Alive.Value) && !Constants.Critical) continue;
 
                 attachments.Add(new SlackAttachment()
                 {
                     Fallback = $"{site.Url} is {status}",
                     Title = $"<{site.Url}>",
-                    Text = status,
+                    Text = status + (site.Alive != null && !site.Alive.Value ? $" <!subteam^{_config.TeamId}>" : string.Empty),
                     Color = site.Alive == null ? Color.Silver.ToHEX() : site.Alive.Value ? Color.Green.ToHEX() : Color.Red.ToHEX(),
                     Actions = new List<SlackAction>()
                     {

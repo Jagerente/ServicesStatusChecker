@@ -2,9 +2,9 @@
 {
     internal class Constants
     {
-        public const string ConfigPath = "Resources/";
-        public const string SitesPath = ConfigPath + "sites.txt";
-        public const string TokenPath = ConfigPath + "token.json";
+        public const string ResourcesPath = "Resources/";
+        public const string SitesPath = ResourcesPath + "sites.txt";
+        public const string ConfigPath = ResourcesPath + "config.json";
         public static bool Critical = false;
     }
 }

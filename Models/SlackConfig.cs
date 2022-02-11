@@ -8,5 +8,7 @@ namespace ServicesStatusChecker.Models
         public string Token { get; set; }
         [JsonProperty("webHookUrl")]
         public string WebHookUrl { get; set; }
+        [JsonProperty("teamId")]
+        public string TeamId { get; set; }
     }
 }

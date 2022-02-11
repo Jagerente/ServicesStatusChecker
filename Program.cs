@@ -19,7 +19,7 @@ namespace ServicesStatusChecker
 
             Log.Debug("Program has started.");
             
-            var slackBot = new SlackBot(Constants.TokenPath);
+            var slackBot = new SlackBot(Constants.ConfigPath);
 
             await slackBot.ScheduledCheck();
 
@@ -32,9 +32,10 @@ namespace ServicesStatusChecker
         {
             if (args.Length == 0) return;
 
-            if (args.Any(arg => arg.Contains("-critical")))
+            if (args.Any(arg => arg.Contains("critical")))
             {
                 Constants.Critical = true;
+                Console.WriteLine("Set critical level.");
             }
         }
     }
