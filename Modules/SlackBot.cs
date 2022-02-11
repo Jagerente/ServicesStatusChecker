@@ -44,8 +44,6 @@ namespace ServicesStatusChecker.Modules
 
         public async Task ScheduledCheck()
         {
-
-            var slackMessage = new SlackMessage();
             var attachments = new List<SlackAttachment>();
 
             Log.Debug("Configuring message.");
@@ -53,6 +51,9 @@ namespace ServicesStatusChecker.Modules
             foreach (var site in Sites)
             {
                 var status = site.Status;
+
+                if (site.Alive != null && site.Alive.Value && !Constants.Critical) continue;
+
                 attachments.Add(new SlackAttachment()
                 {
                     Fallback = $"{site.Url} is {status}",
@@ -71,7 +72,16 @@ namespace ServicesStatusChecker.Modules
                 });
             }
 
-            slackMessage.Attachments = attachments;
+            if (attachments.Count == 0)
+            {
+                Log.Debug("All services are alive.");
+                return;
+            }
+            
+            var slackMessage = new SlackMessage
+            {
+                Attachments = attachments
+            };
 
             await WebHookClient.PostAsync(slackMessage);
 

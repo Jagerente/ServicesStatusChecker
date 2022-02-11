@@ -9,6 +9,8 @@ namespace ServicesStatusChecker
 
         static async Task Main(string[] args)
         {
+            ParseArguments(args);
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
@@ -24,6 +26,16 @@ namespace ServicesStatusChecker
             Log.CloseAndFlush();
 
             Environment.Exit(0);
+        }
+
+        private static void ParseArguments(string[] args)
+        {
+            if (args.Length == 0) return;
+
+            if (args.Any(arg => arg.Contains("-critical")))
+            {
+                Constants.Critical = true;
+            }
         }
     }
 }
