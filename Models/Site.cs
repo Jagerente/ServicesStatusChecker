@@ -7,7 +7,6 @@ namespace ServicesStatusChecker.Models
         public Site(string url)
         {
             Url = url;
-
             try
             {
                 Alive = CheckLocalStatus().Result;

@@ -21,7 +21,9 @@ namespace ServicesStatusChecker
             
             var slackBot = new SlackBot(Constants.ConfigPath);
 
-            await slackBot.ScheduledCheck();
+            await slackBot.ClientStatusCheck();
+
+            //await slackBot.WebClientStatusCheck();
 
             Log.CloseAndFlush();
 

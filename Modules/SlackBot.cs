@@ -11,14 +11,15 @@ namespace ServicesStatusChecker.Modules
     {
         private static SlackConfig _config = new();
 
-        private static SlackClient WebHookClient;
+        private static Slack.Webhooks.SlackClient WebHookClient;
+
+        private static SlackAPI.SlackTaskClient Client;
 
         private static List<Site> Sites;
 
         public SlackBot(string tokenPath)
         {
             InitConfig(tokenPath);
-            ConfigureSites(Constants.SitesPath);
             Log.Debug("Slack WebHook is ready.");
         }
 
@@ -26,6 +27,7 @@ namespace ServicesStatusChecker.Modules
         {
             _config = JsonConvert.DeserializeObject<SlackConfig>(File.ReadAllText(path));
 
+            Client = new SlackAPI.SlackTaskClient(_config.Token);
             WebHookClient = new SlackClient($"{_config.WebHookUrl}");
             Log.Debug("WebHook client configured.");
         }
@@ -42,14 +44,61 @@ namespace ServicesStatusChecker.Modules
             });
         }
 
-        public async Task ScheduledCheck()
+        public async Task ClientStatusCheck()
         {
-            var attachments = new List<SlackAttachment>();
-
-            Log.Debug("Configuring message.");
+            ConfigureSites(Constants.SitesPath);
 
             foreach (var site in Sites)
             {
+                Log.Debug("Configuring message.");
+
+                var status = site.Status;
+
+                if ((site.Alive == null || site.Alive.Value) && !Constants.Critical) continue;
+
+                var attachments = new[]
+                {
+                    new SlackAPI.Attachment()
+                    {
+                        fallback = $"{site.Url} is {status}",
+                        text = status + (site.Alive != null && !site.Alive.Value
+                            ? $" <!subteam^{_config.TeamId}>"
+                            : string.Empty),
+                        color = site.Alive == null ? Color.Silver.ToHEX() :
+                            site.Alive.Value ? Color.Green.ToHEX() : Color.Red.ToHEX(),
+                        actions = new[]
+                        {
+                            new SlackAPI.AttachmentAction("button", "Open Web")
+                            {
+                                url = site.Url,
+                                type = "button"
+                            }
+                        }
+                    }
+                };
+
+
+                await Client.PostMessageAsync("status",
+                    string.Empty,
+                    site.Url,
+                    icon_emoji: site.Alive == null ? Emoji.Warning : site.Alive.Value ? Emoji.WhiteCheckMark : Emoji.X,
+                    attachments: attachments);
+            }
+
+            Log.Debug("Scheduled messages sent.");
+        }
+
+        [Obsolete]
+        public async Task WebClientStatusCheck()
+        {
+            ConfigureSites(Constants.SitesPath);
+
+            foreach (var site in Sites)
+            {
+                var attachments = new List<SlackAttachment>();
+                
+                Log.Debug("Configuring message.");
+                
                 var status = site.Status;
 
                 if ((site.Alive == null || site.Alive.Value) && !Constants.Critical) continue;
@@ -57,7 +106,6 @@ namespace ServicesStatusChecker.Modules
                 attachments.Add(new SlackAttachment()
                 {
                     Fallback = $"{site.Url} is {status}",
-                    Title = $"<{site.Url}>",
                     Text = status + (site.Alive != null && !site.Alive.Value ? $" <!subteam^{_config.TeamId}>" : string.Empty),
                     Color = site.Alive == null ? Color.Silver.ToHEX() : site.Alive.Value ? Color.Green.ToHEX() : Color.Red.ToHEX(),
                     Actions = new List<SlackAction>()
@@ -70,22 +118,18 @@ namespace ServicesStatusChecker.Modules
                         }
                     }
                 });
+                var slackMessage = new SlackMessage
+                {
+                    Username = site.Url,
+                    IconEmoji = site.Alive == null ? Emoji.Warning : site.Alive.Value ? Emoji.WhiteCheckMark : Emoji.X,
+                    Attachments = attachments,
+                    
+                };
+
+                await WebHookClient.PostAsync(slackMessage);
             }
 
-            if (attachments.Count == 0)
-            {
-                Log.Debug("All services are alive.");
-                return;
-            }
-            
-            var slackMessage = new SlackMessage
-            {
-                Attachments = attachments
-            };
-
-            await WebHookClient.PostAsync(slackMessage);
-
-            Log.Debug("Scheduled message sent.");
+            Log.Debug("Scheduled messages sent.");
         }
     }
 }
