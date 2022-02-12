@@ -26,8 +26,6 @@ namespace ServicesStatusChecker
             //await slackBot.WebClientStatusCheck();
 
             Log.CloseAndFlush();
-
-            Environment.Exit(0);
         }
 
         private static void ParseArguments(string[] args)
